@@ -1,0 +1,36 @@
+package app.backend.Controller;
+
+import app.backend.Service.AuthService;
+import app.backend.dto.LoginDto;
+import app.backend.dto.RegistrationDto;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@CrossOrigin(value = "*")
+@RestController
+@RequestMapping("/api/auth/")
+@AllArgsConstructor
+
+
+public class AuthController {
+
+    private AuthService authService;
+
+//    Build Register REST API
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@RequestBody RegistrationDto registrationDto){
+        String response = authService.register(registrationDto);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+//    Build Login REST API
+    @PostMapping("/login")
+    public  ResponseEntity<String> login(@RequestBody LoginDto loginDto){
+        String response = authService.login(loginDto);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+}
