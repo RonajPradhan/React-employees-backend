@@ -6,20 +6,28 @@ import app.backend.Model.Role;
 import app.backend.Model.User;
 import app.backend.Repository.RoleRepository;
 import app.backend.Repository.UserRepository;
+import app.backend.Security.JwtTokenProvider;
 import app.backend.Service.AuthService;
 import app.backend.dto.LoginDto;
 import app.backend.dto.RegistrationDto;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -30,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private PasswordEncoder passwordEncoder;
     private AuthenticationManager authenticationManager;
 
+private JwtTokenProvider jwtTokenProvider;
     @Override
     public String register(RegistrationDto registrationDto) {
 //        check if username already exists in the database
@@ -88,15 +97,31 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String login(LoginDto loginDto) {
+    public ResponseCookie login(LoginDto loginDto) {
 
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                loginDto.getUsernameOrEmail(),
-                loginDto.getPassword()
-        ));
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        return "User logged-in successfully";
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        ResponseCookie jwtCookie = jwtTokenProvider.generateJwtCookie(userDetails);
+
+        return jwtCookie;
+
+
+//        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+//                loginDto.getUsernameOrEmail(),
+//                loginDto.getPassword()
+//        ));
+//
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//        return "User logged-in successfully";
+    }
+    @Override
+    public ResponseCookie signout() {
+        ResponseCookie cookie = jwtTokenProvider.getCleanJwtCookie();
+        return cookie;
     }
 }
