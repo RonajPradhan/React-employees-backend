@@ -29,9 +29,16 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDto createEmployee(EmployeeDto employeeDto){
-        Employee employee = EmployeeMapper.mapToEmployee(employeeDto);
+        Employee employee = modelMapper.map(employeeDto, Employee.class);
         Employee savedEmployee = employeeRepository.save(employee);
-        return EmployeeMapper.mapToEmployeeDto(savedEmployee);
+        EmployeeDto savedEmployeeDto = modelMapper.map(savedEmployee,EmployeeDto.class);
+
+//        Why didn't this work??
+
+//        Employee employee = EmployeeMapper.mapToEmployee(employeeDto);
+//        Employee savedEmployee = employeeRepository.save(employee);
+//        return EmployeeMapper.mapToEmployeeDto(savedEmployee);
+        return savedEmployeeDto;
 
     }
 
@@ -47,7 +54,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee updatedEmployeeObj = employeeRepository.save(employee);
 
-        return EmployeeMapper.mapToEmployeeDto(updatedEmployeeObj);
+        return modelMapper.map(updatedEmployeeObj,EmployeeDto.class);
     }
 
     @Override
@@ -56,7 +63,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Employee is not exists with given id : " + id));
 
-        return EmployeeMapper.mapToEmployeeDto(employee);
+        return modelMapper.map(employee,EmployeeDto.class);
     }
 
     @Override

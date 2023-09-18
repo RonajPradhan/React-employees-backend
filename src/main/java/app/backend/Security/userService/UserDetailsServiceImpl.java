@@ -1,37 +1,31 @@
-package app.backend.Security;
+package app.backend.Security.userService;
 
 
 import app.backend.Model.User;
 import app.backend.Repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
 @Service
 @AllArgsConstructor
-public class CustomUserDetailsService implements UserDetailsService {
+@Primary
+public class UserDetailsServiceImpl implements UserDetailsService {
 
     private UserRepository userRepository;
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         User user = userRepository.findByUserNameOrEmail(usernameOrEmail,usernameOrEmail).orElseThrow(() -> new
                 UsernameNotFoundException("User doesn't exist by Username or email"));
 
-        Set<GrantedAuthority> authorities = user.getRoles().stream().map((role) -> new SimpleGrantedAuthority(role.getName().name())).collect(Collectors.toSet());
-
-        return new org.springframework.security.core.userdetails.User(
-                usernameOrEmail,
-                user.getPassword(),
-                authorities
-        );
+        return UserDetailsImpl.build(user);
     }
 
 }

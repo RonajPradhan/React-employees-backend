@@ -1,6 +1,8 @@
 package app.backend.Controller;
 
+import app.backend.Security.userService.UserDetailsImpl;
 import app.backend.Service.AuthService;
+import app.backend.dto.JwtAuthResponse;
 import app.backend.dto.LoginDto;
 import app.backend.dto.RegistrationDto;
 import lombok.AllArgsConstructor;
@@ -33,20 +35,15 @@ public class AuthController {
 
 //    Build Login REST API
     @PostMapping("/login")
-    public  ResponseEntity<String> login(@RequestBody LoginDto loginDto){
-        ResponseCookie response = authService.login(loginDto);
-//        List<String> roles = userDetails.getAuthorities().stream()
-//                .map(item->item.getAuthority())
-//                .collect(Collectors.toList());
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,response.toString())
-                .body("You have been signed-in.");
+    public  ResponseEntity<?> login(@RequestBody LoginDto loginDto){
+       return authService.login(loginDto);
     }
 
-    @PostMapping("/sign-out")
-    public ResponseEntity<?> signout() {
-        ResponseCookie response = authService.signout();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,response.toString())
-                .body("You have been signed-out.");
-    }
+//    @PostMapping("/sign-out")
+//    public ResponseEntity<?> signout() {
+//        ResponseCookie response = authService.signout();
+//        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,response.toString())
+//                .body("You have been signed-out.");
+//    }
 
 }

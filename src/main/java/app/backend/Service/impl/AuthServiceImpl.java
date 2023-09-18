@@ -7,7 +7,9 @@ import app.backend.Model.User;
 import app.backend.Repository.RoleRepository;
 import app.backend.Repository.UserRepository;
 import app.backend.Security.JwtTokenProvider;
+import app.backend.Security.userService.UserDetailsImpl;
 import app.backend.Service.AuthService;
+import app.backend.dto.JwtAuthResponse;
 import app.backend.dto.LoginDto;
 import app.backend.dto.RegistrationDto;
 import lombok.AllArgsConstructor;
@@ -38,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private PasswordEncoder passwordEncoder;
     private AuthenticationManager authenticationManager;
 
-private JwtTokenProvider jwtTokenProvider;
+    private JwtTokenProvider jwtTokenProvider;
     @Override
     public String register(RegistrationDto registrationDto) {
 //        check if username already exists in the database
@@ -97,17 +99,25 @@ private JwtTokenProvider jwtTokenProvider;
     }
 
     @Override
-    public ResponseCookie login(LoginDto loginDto) {
+    public ResponseEntity<?> login(LoginDto loginDto) {
 
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String jwt = jwtTokenProvider.generateJwtToken(authentication);
 
-        ResponseCookie jwtCookie = jwtTokenProvider.generateJwtCookie(userDetails);
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        return jwtCookie;
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(item -> item.getAuthority())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new JwtAuthResponse(
+                jwt,
+                userDetails.getUsername(),
+                roles
+        ));
 
 
 //        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -119,9 +129,9 @@ private JwtTokenProvider jwtTokenProvider;
 //
 //        return "User logged-in successfully";
     }
-    @Override
-    public ResponseCookie signout() {
-        ResponseCookie cookie = jwtTokenProvider.getCleanJwtCookie();
-        return cookie;
-    }
+//    @Override
+//    public ResponseCookie signout() {
+//        ResponseCookie cookie = jwtTokenProvider.getCleanJwtCookie();
+//        return cookie;
+//    }
 }
