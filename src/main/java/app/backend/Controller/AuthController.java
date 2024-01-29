@@ -1,20 +1,14 @@
 package app.backend.Controller;
 
-import app.backend.Security.userService.UserDetailsImpl;
 import app.backend.Service.AuthService;
-import app.backend.dto.JwtAuthResponse;
 import app.backend.dto.LoginDto;
 import app.backend.dto.RegistrationDto;
+import app.backend.dto.payload.Request.TokenRefreshRequest;
+import app.backend.dto.payload.Response.TokenRefreshResponse;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @CrossOrigin(value = "*")
 @RestController
@@ -39,11 +33,15 @@ public class AuthController {
        return authService.login(loginDto);
     }
 
-//    @PostMapping("/sign-out")
-//    public ResponseEntity<?> signout() {
-//        ResponseCookie response = authService.signout();
-//        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,response.toString())
-//                .body("You have been signed-out.");
-//    }
+    @PostMapping("/refreshToken")
+    public ResponseEntity<?> refreshToken(@RequestBody TokenRefreshRequest tokenRefreshRequest){
+        return authService.refreshToken(tokenRefreshRequest);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(){
+        return authService.logout();
+    }
+
 
 }

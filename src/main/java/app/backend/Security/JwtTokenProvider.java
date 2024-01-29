@@ -30,6 +30,8 @@ public class JwtTokenProvider {
     @Value("${app.jwt-expiration-milliseconds}")
     private long jwtExpirationDate;
 
+//    @Value("{app.jwt-refreshExpiration-milliseconds}")
+
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
         return Jwts.builder()
@@ -66,13 +68,13 @@ public class JwtTokenProvider {
         return false;
     }
 
-//    public String generateTokenFromUsername(String username){
-//        return Jwts.builder()
-//                .setSubject(username)
-//                .setIssuedAt(new Date())
-//                .setExpiration(new Date((new Date()).getTime() + jwtExpirationDate))
-//                .signWith(key(),SignatureAlgorithm.HS256)
-//                .compact();
-//    }
+    public String generateTokenFromUsername(String username){
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + jwtExpirationDate))
+                .signWith(key(),SignatureAlgorithm.HS256)
+                .compact();
+    }
 
 }

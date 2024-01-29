@@ -2,7 +2,6 @@ package app.backend.Exception;
 
 import java.time.LocalDateTime;
 import java.util.Date;
-
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -15,7 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 
 @ControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends Throwable {
 
     @ExceptionHandler(ToDoAPIException.class)
     public ResponseEntity<ErrorDetails> handleToDoAPIException(ToDoAPIException exception,WebRequest webRequest){

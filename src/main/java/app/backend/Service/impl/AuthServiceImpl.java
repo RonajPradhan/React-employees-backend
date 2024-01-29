@@ -1,28 +1,30 @@
 package app.backend.Service.impl;
 
 import app.backend.Exception.ToDoAPIException;
+import app.backend.Exception.TokenRefreshException;
 import app.backend.Model.ERole;
+import app.backend.Model.RefreshToken;
 import app.backend.Model.Role;
 import app.backend.Model.User;
+import app.backend.Repository.RefreshTokenRepository;
 import app.backend.Repository.RoleRepository;
 import app.backend.Repository.UserRepository;
 import app.backend.Security.JwtTokenProvider;
+import app.backend.Security.RefreshTokenService;
 import app.backend.Security.userService.UserDetailsImpl;
 import app.backend.Service.AuthService;
-import app.backend.dto.JwtAuthResponse;
+import app.backend.dto.payload.Request.TokenRefreshRequest;
+import app.backend.dto.payload.Response.JwtAuthResponse;
 import app.backend.dto.LoginDto;
 import app.backend.dto.RegistrationDto;
+import app.backend.dto.payload.Response.TokenRefreshResponse;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private PasswordEncoder passwordEncoder;
     private AuthenticationManager authenticationManager;
 
+    private RefreshTokenService refreshTokenService;
     private JwtTokenProvider jwtTokenProvider;
     @Override
     public String register(RegistrationDto registrationDto) {
@@ -104,34 +107,47 @@ public class AuthServiceImpl implements AuthService {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+
 
         String jwt = jwtTokenProvider.generateJwtToken(authentication);
-
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
+        System.out.print(roles);
+
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+
         return ResponseEntity.ok(new JwtAuthResponse(
                 jwt,
                 userDetails.getUsername(),
+                refreshToken.getToken(),
                 roles
         ));
-
-
-//        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-//                loginDto.getUsernameOrEmail(),
-//                loginDto.getPassword()
-//        ));
-//
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-//
-//        return "User logged-in successfully";
     }
-//    @Override
-//    public ResponseCookie signout() {
-//        ResponseCookie cookie = jwtTokenProvider.getCleanJwtCookie();
-//        return cookie;
-//    }
+
+
+    @Override
+    public ResponseEntity<?> refreshToken(TokenRefreshRequest request){
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::validateExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtTokenProvider.generateTokenFromUsername(user.getUserName());
+                    return ResponseEntity.ok(new TokenRefreshResponse(token,requestRefreshToken));
+        }).orElseThrow(() -> new TokenRefreshException(requestRefreshToken,"Refresh Token is not in database."));
+    }
+
+    @Override
+    public ResponseEntity<?> logout(){
+        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long userId = userDetails.getId();
+        refreshTokenService.deleteByUserId(userId);
+        return ResponseEntity.ok("Logout successful");
+    }
 }
