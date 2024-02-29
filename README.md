@@ -1,0 +1,1 @@
+This is the backend project for Employees Management System. If you required it to work with the frontend you have to go to this link https://github.com/RonajPradhan/React-employees-frontend. Database is configured to be MYSQL 2018 you could change these in application properties.
