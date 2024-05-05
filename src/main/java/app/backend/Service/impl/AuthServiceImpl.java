@@ -66,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
         Set<String> strRoles = registrationDto.getRole();
 
         Set<Role> roles = new HashSet<>();
+
         if(strRoles == null) {
 
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
@@ -78,6 +79,7 @@ public class AuthServiceImpl implements AuthService {
                     case "admin" -> {
                         Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
                                 .orElseThrow(() -> new RuntimeException("Error: Role not found."));
+                        System.out.print(adminRole);
                         roles.add(adminRole);
                     }
                     case "mod" -> {
@@ -109,17 +111,19 @@ public class AuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-
-
         String jwt = jwtTokenProvider.generateJwtToken(authentication);
 
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
-        System.out.print(roles);
+        Long userId = userDetails.getId();
 
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+//        if(userId != null){
+//            refreshTokenService.deleteByUserId(userId);
+//        }
+
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
 
         return ResponseEntity.ok(new JwtAuthResponse(
                 jwt,

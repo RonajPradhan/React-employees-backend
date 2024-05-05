@@ -40,7 +40,6 @@ public class SpringSecurityConfig {
 
     private UserDetailsService userDetailsService;
 
-
     @Bean
     public JwtAuthenticationFilter authenticationJwtTokenFilter() {
         return new JwtAuthenticationFilter();
@@ -95,7 +94,9 @@ public class SpringSecurityConfig {
 //                    authorize.requestMatchers(HttpMethod.GET,"/api/**").permitAll();
                     authorize.requestMatchers("/api/auth/**").permitAll();
                     authorize.requestMatchers(HttpMethod.OPTIONS,"/**").permitAll();
+                    authorize.requestMatchers("/actuator/**").permitAll();
                     authorize.anyRequest().authenticated();
+
 
                 }).httpBasic(Customizer.withDefaults());
         http.authenticationProvider(authenticationProvider());

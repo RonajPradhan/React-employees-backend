@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private EmployeeRepository employeeRepository;
-
     private ModelMapper modelMapper;
 
     @Override
@@ -48,7 +47,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 //        Employee savedEmployee = employeeRepository.save(employee);
 //        return EmployeeMapper.mapToEmployeeDto(savedEmployee);
         return savedEmployeeDto;
-
     }
 
     @Override
@@ -56,13 +54,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Employee is not exists with given id: " + id)
         );
-
         employee.setFirstName(updatedEmployee.getFirstName());
         employee.setLastName(updatedEmployee.getLastName());
         employee.setEmailId(updatedEmployee.getEmailId());
-
         Employee updatedEmployeeObj = employeeRepository.save(employee);
-
         return modelMapper.map(updatedEmployeeObj, EmployeeDto.class);
     }
 
@@ -80,7 +75,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 () -> new ResourceNotFoundException("Employee is not exists with given id: " + id)
         );
         employeeRepository.deleteById(id);
-
     }
 
     @Override

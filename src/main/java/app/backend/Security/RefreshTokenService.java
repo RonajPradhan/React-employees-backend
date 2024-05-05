@@ -4,17 +4,28 @@ import app.backend.Exception.TokenRefreshException;
 import app.backend.Model.RefreshToken;
 import app.backend.Repository.RefreshTokenRepository;
 import app.backend.Repository.UserRepository;
+import app.backend.Security.userService.UserDetailsImpl;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.security.Key;
 import java.time.Instant;
+import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class RefreshTokenService {
+
+    @Value("${app.jwt-RefreshSecret}")
+    private String jwtRefreshSecret;
 
     @Value("${app.jwt-refreshExpiration-milliseconds}")
     private long refreshTokenDurationMs;
@@ -29,6 +40,19 @@ public class RefreshTokenService {
         return refreshTokenRepository.findByToken(token);
     }
 
+    private Key key() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtRefreshSecret));
+    }
+    public String generateJwtRefreshToken(Authentication authentication) {
+        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+        return Jwts.builder()
+                .setSubject((userPrincipal.getUsername()))
+                .setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + refreshTokenDurationMs))
+                .signWith(key(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public RefreshToken createRefreshToken(long userId){
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(userRepository.findById(userId).get());
@@ -40,11 +64,10 @@ public class RefreshTokenService {
     }
 
     public RefreshToken validateExpiration(RefreshToken token){
-        if(token.getExpiryDate().compareTo(Instant.now()) < 0){
+        if(token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);
-            throw new TokenRefreshException(token.getToken(),"Refresh token has been expired!");
+            throw new TokenRefreshException(token.getToken(), "Refresh token has been expired!");
         }
-
         return token;
     }
 
