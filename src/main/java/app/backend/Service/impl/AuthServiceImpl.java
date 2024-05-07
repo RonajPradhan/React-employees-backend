@@ -6,7 +6,6 @@ import app.backend.Model.ERole;
 import app.backend.Model.RefreshToken;
 import app.backend.Model.Role;
 import app.backend.Model.User;
-import app.backend.Repository.RefreshTokenRepository;
 import app.backend.Repository.RoleRepository;
 import app.backend.Repository.UserRepository;
 import app.backend.Security.JwtTokenProvider;
@@ -104,33 +103,34 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<?> login(LoginDto loginDto) {
+    public ResponseEntity<?> login(LoginDto loginDto){
 
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        String jwt = jwtTokenProvider.generateJwtToken(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
+            String jwt = jwtTokenProvider.generateJwtToken(authentication);
 
-        Long userId = userDetails.getId();
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(item -> item.getAuthority())
+                    .collect(Collectors.toList());
 
-//        if(userId != null){
-//            refreshTokenService.deleteByUserId(userId);
-//        }
+            Long userId = userDetails.getId();
 
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
 
-        return ResponseEntity.ok(new JwtAuthResponse(
-                jwt,
-                userDetails.getUsername(),
-                refreshToken.getToken(),
-                roles
-        ));
+            return ResponseEntity.ok(new JwtAuthResponse(
+                    jwt,
+                    userDetails.getUsername(),
+                    refreshToken.getToken(),
+                    roles
+            ));
+
+
+
+
     }
 
 
