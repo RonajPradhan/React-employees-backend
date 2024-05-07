@@ -6,7 +6,6 @@ import app.backend.Model.ERole;
 import app.backend.Model.RefreshToken;
 import app.backend.Model.Role;
 import app.backend.Model.User;
-import app.backend.Repository.RefreshTokenRepository;
 import app.backend.Repository.RoleRepository;
 import app.backend.Repository.UserRepository;
 import app.backend.Security.JwtTokenProvider;
@@ -66,6 +65,7 @@ public class AuthServiceImpl implements AuthService {
         Set<String> strRoles = registrationDto.getRole();
 
         Set<Role> roles = new HashSet<>();
+
         if(strRoles == null) {
 
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
@@ -78,6 +78,7 @@ public class AuthServiceImpl implements AuthService {
                     case "admin" -> {
                         Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
                                 .orElseThrow(() -> new RuntimeException("Error: Role not found."));
+                        System.out.print(adminRole);
                         roles.add(adminRole);
                     }
                     case "mod" -> {
@@ -102,31 +103,34 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<?> login(LoginDto loginDto) {
+    public ResponseEntity<?> login(LoginDto loginDto){
 
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+            String jwt = jwtTokenProvider.generateJwtToken(authentication);
+
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(item -> item.getAuthority())
+                    .collect(Collectors.toList());
+
+            Long userId = userDetails.getId();
+
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
+
+            return ResponseEntity.ok(new JwtAuthResponse(
+                    jwt,
+                    userDetails.getUsername(),
+                    refreshToken.getToken(),
+                    roles
+            ));
 
 
 
-        String jwt = jwtTokenProvider.generateJwtToken(authentication);
 
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
-
-        System.out.print(roles);
-
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
-
-        return ResponseEntity.ok(new JwtAuthResponse(
-                jwt,
-                userDetails.getUsername(),
-                refreshToken.getToken(),
-                roles
-        ));
     }
 
 

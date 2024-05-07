@@ -18,6 +18,7 @@ public class UserDetailsImpl implements UserDetails {
     private String userName;
     private String email;
 
+//    Doesnt send password to as a UserDetails (We dont want anyone to access password.)
     @JsonIgnore
     private String password;
 

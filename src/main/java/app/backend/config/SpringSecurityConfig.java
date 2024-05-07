@@ -3,6 +3,7 @@ package app.backend.config;
 
 import app.backend.Security.JwtAuthenticationEntryPoint;
 import app.backend.Security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -21,6 +22,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -40,7 +42,6 @@ public class SpringSecurityConfig {
 
     private UserDetailsService userDetailsService;
 
-
     @Bean
     public JwtAuthenticationFilter authenticationJwtTokenFilter() {
         return new JwtAuthenticationFilter();
@@ -55,6 +56,11 @@ public class SpringSecurityConfig {
 
         return authProvider;
     }
+
+//    @Bean
+//    public AuthenticationEntryPoint authenticationEntryPoint() {
+//        return (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+//    }
 
 
     @Bean
@@ -81,6 +87,11 @@ public class SpringSecurityConfig {
     }
 
     @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
@@ -95,7 +106,9 @@ public class SpringSecurityConfig {
 //                    authorize.requestMatchers(HttpMethod.GET,"/api/**").permitAll();
                     authorize.requestMatchers("/api/auth/**").permitAll();
                     authorize.requestMatchers(HttpMethod.OPTIONS,"/**").permitAll();
+                    authorize.requestMatchers("/actuator/**").permitAll();
                     authorize.anyRequest().authenticated();
+
 
                 }).httpBasic(Customizer.withDefaults());
         http.authenticationProvider(authenticationProvider());
@@ -104,8 +117,5 @@ public class SpringSecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
+
 }
