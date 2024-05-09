@@ -69,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
         if(strRoles == null) {
 
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
+                    .orElseThrow(() -> new RuntimeException("Error: Role not found."));
             roles.add(userRole);
 
         } else{
@@ -78,7 +78,6 @@ public class AuthServiceImpl implements AuthService {
                     case "admin" -> {
                         Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
                                 .orElseThrow(() -> new RuntimeException("Error: Role not found."));
-                        System.out.print(adminRole);
                         roles.add(adminRole);
                     }
                     case "mod" -> {
@@ -127,10 +126,6 @@ public class AuthServiceImpl implements AuthService {
                     refreshToken.getToken(),
                     roles
             ));
-
-
-
-
     }
 
 
@@ -151,6 +146,7 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<?> logout(){
         UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long userId = userDetails.getId();
+//        What about access token? Should they not be invalidated when user logs out?
         refreshTokenService.deleteByUserId(userId);
         return ResponseEntity.ok("Logout successful");
     }

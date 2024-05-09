@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.util.WebUtils;
 import io.jsonwebtoken.io.Decoders;
 import java.security.Key;
@@ -23,6 +24,8 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+
+    private HandlerExceptionResolver exceptionResolver;
 
     @Value("${app.jwt-secret}")
     private String jwtSecret;
@@ -60,6 +63,8 @@ public class JwtTokenProvider {
 
         } catch (ExpiredJwtException e) {
             logger.error("JWT token is expired: {}",e.getMessage());
+            throw e;
+
         } catch (UnsupportedJwtException e) {
             logger.error("JWT token is unsupported: {}",e.getMessage());
         }catch (IllegalArgumentException e) {
