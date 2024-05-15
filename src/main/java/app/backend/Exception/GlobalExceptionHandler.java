@@ -1,12 +1,10 @@
 package app.backend.Exception;
 
-
 import java.time.LocalDateTime;
-import java.util.Date;
-
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.http.*;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -53,6 +51,16 @@ public class GlobalExceptionHandler extends Throwable {
         return new ResponseEntity<>(errorDetails,HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorDetails> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex, WebRequest webRequest) {
+        ErrorDetails errorDetails = new ErrorDetails(
+                LocalDateTime.now(),
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST,
+                webRequest.getDescription(false)
+        );
+        return new ResponseEntity<>(errorDetails,HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleSecurityException(Exception ex){
@@ -61,7 +69,6 @@ public class GlobalExceptionHandler extends Throwable {
         if(ex instanceof BadCredentialsException){
             errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401),ex.getMessage());
             errorDetail.setProperty("access_denied_reason","Authentication Failure");
-
         }
 
         if(ex instanceof AccessDeniedException){
@@ -70,12 +77,12 @@ public class GlobalExceptionHandler extends Throwable {
         }
 
         if(ex instanceof ExpiredJwtException){
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403),ex.getMessage());
+            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401),ex.getMessage());
             errorDetail.setProperty("access_denied_reason","JWT Token already expired");
         }
 
         if(ex instanceof SignatureException){
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403),ex.getMessage());
+            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401),ex.getMessage());
             errorDetail.setProperty("access_denied_reason","JWT signature not valid");
         }
 
