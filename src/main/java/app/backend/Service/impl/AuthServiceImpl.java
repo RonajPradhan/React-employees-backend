@@ -2,20 +2,20 @@ package app.backend.Service.impl;
 
 import app.backend.Exception.ToDoAPIException;
 import app.backend.Exception.TokenRefreshException;
-import app.backend.Model.ERole;
+import app.backend.Mapper.LoginMapper;
+import app.backend.Mapper.RegistrationMapper;
 import app.backend.Model.RefreshToken;
-import app.backend.Model.Role;
 import app.backend.Model.User;
-import app.backend.Repository.RoleRepository;
 import app.backend.Repository.UserRepository;
 import app.backend.Security.JwtTokenProvider;
 import app.backend.Security.RefreshTokenService;
 import app.backend.Security.userService.UserDetailsImpl;
 import app.backend.Service.AuthService;
+import app.backend.dto.payload.Request.LoginRequest;
+import app.backend.dto.payload.Request.RegistrationRequest;
 import app.backend.dto.payload.Request.TokenRefreshRequest;
-import app.backend.dto.payload.Response.JwtAuthResponse;
-import app.backend.dto.LoginDto;
-import app.backend.dto.RegistrationDto;
+import app.backend.dto.payload.Response.LoginResponse;
+import app.backend.dto.payload.Response.RegistrationResponse;
 import app.backend.dto.payload.Response.TokenRefreshResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,115 +24,67 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private RegistrationMapper registrationMapper;
+    private LoginMapper loginMapper;
     private UserRepository userRepository;
-    private RoleRepository roleRepository;
-    private PasswordEncoder passwordEncoder;
     private AuthenticationManager authenticationManager;
 
     private RefreshTokenService refreshTokenService;
     private JwtTokenProvider jwtTokenProvider;
-    @Override
-    public String register(RegistrationDto registrationDto) {
-//        check if username already exists in the database
 
-        if(userRepository.existsByUserName(registrationDto.getUserName())){
+    @Override
+    public RegistrationResponse register(RegistrationRequest registrationRequest) {
+
+        if(userRepository.existsByUserName(registrationRequest.userName())){
             throw new ToDoAPIException(HttpStatus.BAD_REQUEST,"Username already exists!");
         }
-//
-        if(userRepository.existsByEmail(registrationDto.getEmail())){
+
+        if(userRepository.existsByEmail(registrationRequest.email())){
             throw new ToDoAPIException(HttpStatus.BAD_REQUEST,"Email already exists");
         }
 
-        User user = new User();
-        user.setFirstName(registrationDto.getFirstName());
-        user.setLastName(registrationDto.getLastName());
-        user.setUserName(registrationDto.getUserName());
-        user.setEmail(registrationDto.getEmail());
-        user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
+        User savedUser = userRepository.save(registrationMapper.toRegister(registrationRequest));
 
-        Set<String> strRoles = registrationDto.getRole();
-
-        Set<Role> roles = new HashSet<>();
-
-        if(strRoles == null) {
-
-            Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-            roles.add(userRole);
-
-        } else{
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin" -> {
-                        Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role not found."));
-                        System.out.print(adminRole);
-                        roles.add(adminRole);
-                    }
-                    case "mod" -> {
-                        Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
-                                .orElseThrow(() -> new RuntimeException("Error: Role not found."));
-                        roles.add(modRole);
-                    }
-                    default -> {
-                        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role not found."));
-                        roles.add(userRole);
-                    }
-                }
-            });
-        }
-
-        user.setRoles(roles);
-        userRepository.save(user);
-
-        return "User Registered Successfully";
+        return registrationMapper.fromRegister(savedUser);
 
     }
 
     @Override
-    public ResponseEntity<?> login(LoginDto loginDto){
+    public ResponseEntity<?> login(LoginRequest loginRequest){
+    System.out.print(loginRequest);
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.userNameOrEmail(), loginRequest.password()));
 
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
+        String jwt = jwtTokenProvider.generateJwtToken(authentication);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-            String jwt = jwtTokenProvider.generateJwtToken(authentication);
-
-            List<String> roles = userDetails.getAuthorities().stream()
+        List<String> roles = userDetails.getAuthorities().stream()
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
 
-            Long userId = userDetails.getId();
+        Long userId = userDetails.getId();
 
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
 
-            return ResponseEntity.ok(new JwtAuthResponse(
-                    jwt,
-                    userDetails.getUsername(),
-                    refreshToken.getToken(),
-                    roles
-            ));
+        LoginResponse response = loginMapper.fromLogin(
+                jwt,
+                userDetails.getUsername(),
+                refreshToken,
+                roles
+        );
 
-
-
-
+        return ResponseEntity.ok(response);
     }
-
 
     @Override
     public ResponseEntity<?> refreshToken(TokenRefreshRequest request){
@@ -143,7 +95,8 @@ public class AuthServiceImpl implements AuthService {
                 .map(RefreshToken::getUser)
                 .map(user -> {
                     String token = jwtTokenProvider.generateTokenFromUsername(user.getUserName());
-                    return ResponseEntity.ok(new TokenRefreshResponse(token,requestRefreshToken));
+                    RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+                    return ResponseEntity.ok(new TokenRefreshResponse(token,refreshToken.getToken()));
         }).orElseThrow(() -> new TokenRefreshException(requestRefreshToken,"Refresh Token is not in database."));
     }
 

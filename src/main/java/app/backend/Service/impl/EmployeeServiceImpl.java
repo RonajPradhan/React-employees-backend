@@ -6,7 +6,9 @@ import app.backend.Mapper.EmployeeMapper;
 import app.backend.Model.Employee;
 import app.backend.Repository.EmployeeRepository;
 import app.backend.Service.EmployeeService;
-import app.backend.dto.EmployeeDto;
+
+import app.backend.dto.payload.Request.EmployeeRequest;
+import app.backend.dto.payload.Response.EmployeeResponse;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -27,52 +29,50 @@ import java.util.stream.Collectors;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private EmployeeRepository employeeRepository;
-    private ModelMapper modelMapper;
+    private EmployeeMapper employeeMapper;
 
     @Override
-    public List<EmployeeDto> getAllEmployees() {
+    public List<EmployeeResponse> getAllEmployees() {
         List<Employee> employees = employeeRepository.findAll();
-        return employees.stream().map((employee) -> modelMapper.map(employee, EmployeeDto.class)).collect(Collectors.toList());
+        return employees.stream().map((employee) -> employeeMapper.fromEmployee(employee)).collect(Collectors.toList());
     }
 
     @Override
-    public EmployeeDto createEmployee(EmployeeDto employeeDto) {
-        Employee employee = modelMapper.map(employeeDto, Employee.class);
+    public EmployeeResponse createEmployee(EmployeeRequest employeeRequest) {
+        Employee employee = employeeMapper.toEmployee(employeeRequest);
         Employee savedEmployee = employeeRepository.save(employee);
-        EmployeeDto savedEmployeeDto = modelMapper.map(savedEmployee, EmployeeDto.class);
 
-//        Why didn't this work??
-
-//        Employee employee = EmployeeMapper.mapToEmployee(employeeDto);
-//        Employee savedEmployee = employeeRepository.save(employee);
-//        return EmployeeMapper.mapToEmployeeDto(savedEmployee);
-        return savedEmployeeDto;
+        return employeeMapper.fromEmployee(savedEmployee);
     }
 
     @Override
-    public EmployeeDto updateEmployee(Long id, EmployeeDto updatedEmployee) {
+    public EmployeeResponse updateEmployee(Long id, EmployeeRequest employeeRequest) {
         Employee employee = employeeRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Employee is not exists with given id: " + id)
+                () -> new ResourceNotFoundException("Employee does not exists with given id: " + id)
         );
-        employee.setFirstName(updatedEmployee.getFirstName());
-        employee.setLastName(updatedEmployee.getLastName());
-        employee.setEmailId(updatedEmployee.getEmailId());
-        Employee updatedEmployeeObj = employeeRepository.save(employee);
-        return modelMapper.map(updatedEmployeeObj, EmployeeDto.class);
+
+        employee.setFirstName(employeeRequest.firstName());
+        employee.setLastName(employeeRequest.lastName());
+        employee.setEmailId(employeeRequest.emailId());
+
+        Employee updatedEmployee = employeeRepository.save(employee);
+        return employeeMapper.fromEmployee(updatedEmployee);
     }
 
     @Override
-    public EmployeeDto getEmployeeById(long id) {
+    public EmployeeResponse getEmployeeById(long id) {
+        System.out.println(id);
+        System.out.println(employeeRepository.findById(id).isPresent());
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Employee is not exists with given id : " + id));
-        return modelMapper.map(employee, EmployeeDto.class);
+                        new ResourceNotFoundException("Employee does not exists with given id : " + id));
+        return employeeMapper.fromEmployee(employee);
     }
 
     @Override
     public void deleteEmployeeById(long id) {
         Employee employee = employeeRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Employee is not exists with given id: " + id)
+                () -> new ResourceNotFoundException("Employee does not exists with given id: " + id)
         );
         employeeRepository.deleteById(id);
     }

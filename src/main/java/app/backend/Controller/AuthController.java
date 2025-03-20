@@ -1,10 +1,10 @@
 package app.backend.Controller;
 
 import app.backend.Service.AuthService;
-import app.backend.dto.LoginDto;
-import app.backend.dto.RegistrationDto;
+import app.backend.dto.payload.Request.LoginRequest;
+import app.backend.dto.payload.Request.RegistrationRequest;
 import app.backend.dto.payload.Request.TokenRefreshRequest;
-import app.backend.dto.payload.Response.TokenRefreshResponse;
+import app.backend.dto.payload.Response.RegistrationResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +22,15 @@ public class AuthController {
 
 //    Build Register REST API
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegistrationDto registrationDto){
-        String response = authService.register(registrationDto);
+    public ResponseEntity<RegistrationResponse> register(@RequestBody RegistrationRequest registrationRequest){
+        RegistrationResponse response = authService.register(registrationRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 //    Build Login REST API
     @PostMapping("/login")
-    public  ResponseEntity<?> login(@RequestBody LoginDto loginDto){
-       return authService.login(loginDto);
+    public  ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
+       return authService.login(loginRequest);
     }
 
     @PostMapping("/refreshToken")

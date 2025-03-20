@@ -47,6 +47,8 @@ public class SpringSecurityConfig {
         return new JwtAuthenticationFilter();
     }
 
+//    This Bean is uses a UserDetailService to retrieve user details from
+//    database and compare credentials.
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -108,8 +110,6 @@ public class SpringSecurityConfig {
                     authorize.requestMatchers(HttpMethod.OPTIONS,"/**").permitAll();
                     authorize.requestMatchers("/actuator/**").permitAll();
                     authorize.anyRequest().authenticated();
-
-
                 }).httpBasic(Customizer.withDefaults());
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);

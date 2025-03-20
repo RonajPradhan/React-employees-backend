@@ -1,16 +1,15 @@
 package app.backend.Service;
 
-import app.backend.Security.userService.UserDetailsImpl;
-import app.backend.dto.LoginDto;
-import app.backend.dto.RegistrationDto;
+import app.backend.dto.payload.Request.LoginRequest;
+import app.backend.dto.payload.Request.RegistrationRequest;
 import app.backend.dto.payload.Request.TokenRefreshRequest;
-import app.backend.dto.payload.Response.TokenRefreshResponse;
+import app.backend.dto.payload.Response.RegistrationResponse;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
-    String register(RegistrationDto registrationDto);
+    RegistrationResponse register(RegistrationRequest registrationRequest);
 
-    ResponseEntity<?> login(LoginDto loginDto);
+    ResponseEntity<?> login(LoginRequest loginRequest);
 
     ResponseEntity<?> refreshToken(TokenRefreshRequest tokenRefreshRequest);
 

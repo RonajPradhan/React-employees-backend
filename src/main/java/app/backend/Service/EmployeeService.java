@@ -1,7 +1,9 @@
 package app.backend.Service;
 
 import app.backend.Model.Employee;
-import app.backend.dto.EmployeeDto;
+
+import app.backend.dto.payload.Request.EmployeeRequest;
+import app.backend.dto.payload.Response.EmployeeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 
@@ -10,10 +12,10 @@ import java.util.Map;
 
 public interface EmployeeService {
 
-    List<EmployeeDto> getAllEmployees();
-    EmployeeDto createEmployee(EmployeeDto employeeDto);
-    EmployeeDto updateEmployee(Long id,EmployeeDto updatedEmployee);
-    EmployeeDto getEmployeeById(long id);
+    List<EmployeeResponse> getAllEmployees();
+    EmployeeResponse createEmployee(EmployeeRequest employeeRequest);
+    EmployeeResponse updateEmployee(Long id,EmployeeRequest employeeRequest);
+    EmployeeResponse getEmployeeById(long id);
     void deleteEmployeeById(long id);
 
     ResponseEntity<Map<String,Object>> getEmployeesByPageOnly(Integer pageNumber, Integer pageSize);
